@@ -141,8 +141,8 @@ class TestStubPeriodProperties:
         """stub_period returns either None or a BillingPeriod with start <= end."""
         stub = stub_period(period, eff_date)
         if stub is None:
-            # None means effective_date was after period end.
-            assert eff_date > period.end_date
+            # None means effective_date was at or after period end.
+            assert eff_date >= period.end_date
         else:
             assert stub.start_date <= stub.end_date
             assert stub.start_date >= period.start_date

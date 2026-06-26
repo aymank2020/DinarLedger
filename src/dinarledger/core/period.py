@@ -147,7 +147,7 @@ def stub_period(
     Returns the full period when *effective_date* is at or before the
     period start, and ``None`` when it is past the period end.
     """
-    if effective_date > period.end_date:
+    if effective_date >= period.end_date:
         return None
 
     stub_start = max(effective_date, period.start_date)
