@@ -7,14 +7,15 @@ RUN pip install --no-cache-dir \
     setuptools==75.1.0 \
     wheel==0.44.0
 
+RUN pip install --no-cache-dir \
+    pytest==9.0.3 \
+    pytest-cov==7.1.0 \
+    hypothesis==6.153.6
+
 COPY pyproject.toml pytest.ini Makefile ./
 COPY src/ src/
 COPY tests/ tests/
 
-RUN pip install --no-cache-dir \
-    pytest==9.0.3 \
-    pytest-cov==7.1.0 \
-    hypothesis==6.153.6 \
-    && pip install --no-cache-dir -e .
+ENV PYTHONPATH=/app/src
 
 CMD ["pytest"]
