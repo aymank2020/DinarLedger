@@ -13,14 +13,13 @@ from __future__ import annotations
 import argparse
 from datetime import date as date_type
 
+from dinarledger.billing.invoice_gen import generate_invoice, void_invoice
 from dinarledger.cli import store
 from dinarledger.cli.formatters import format_money, output
-from dinarledger.billing.invoice_gen import generate_invoice, void_invoice
-from dinarledger.core.enums import InvoiceStatus
 from dinarledger.core.types import BillingPeriod, Invoice
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the ``invoice`` subcommand group."""
     parser = subparsers.add_parser("invoice", help="Invoice management")
     sub = parser.add_subparsers(dest="invoice_action")
@@ -31,8 +30,9 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     gen_p.add_argument("--start", required=True, help="Period start (YYYY-MM-DD)")
     gen_p.add_argument("--end", required=True, help="Period end (YYYY-MM-DD)")
     gen_p.add_argument("--tax-code", default="", help="Tax code to apply")
-    gen_p.add_argument("--first", action="store_true",
-                        help="Mark as first invoice (include setup fee)")
+    gen_p.add_argument(
+        "--first", action="store_true", help="Mark as first invoice (include setup fee)"
+    )
     gen_p.set_defaults(handler=_cmd_generate)
 
     # void
@@ -54,7 +54,7 @@ def _parse_date(s: str) -> date_type:
     return date_type.fromisoformat(s)
 
 
-def _invoice_to_dict(inv: Invoice) -> dict:
+def _invoice_to_dict(inv: Invoice) -> dict[str, object]:
     """Convert an Invoice to a JSON-friendly dict."""
     return {
         "invoice_id": inv.invoice_id,
@@ -77,6 +77,7 @@ def _invoice_to_dict(inv: Invoice) -> dict:
 
 
 # ── Command implementations ──────────────────────────────────────────────
+
 
 def _cmd_generate(args: argparse.Namespace) -> str:
     sub = store.subscriptions.get(args.sub)
@@ -126,19 +127,23 @@ def _cmd_list(args: argparse.Namespace) -> str:
     headers = ["ID", "Customer", "Status", "Issue Date", "Due Date", "Total"]
     rows = []
     for inv in store.invoices.values():
-        rows.append([
-            inv.invoice_id[:8] + "…",
-            inv.customer_id,
-            inv.status.value,
-            str(inv.issue_date),
-            str(inv.due_date),
-            format_money(inv.total),
-        ])
+        rows.append(
+            [
+                inv.invoice_id[:8] + "…",
+                inv.customer_id,
+                inv.status.value,
+                str(inv.issue_date),
+                str(inv.due_date),
+                format_money(inv.total),
+            ]
+        )
     if not rows:
         return "No invoices found."
     return output(
-        data=[dict(zip(headers, r)) for r in rows],
-        headers=headers, rows=rows, fmt=args.format,
+        data=[dict(zip(headers, r, strict=False)) for r in rows],
+        headers=headers,
+        rows=rows,
+        fmt=args.format,
     )
 
 

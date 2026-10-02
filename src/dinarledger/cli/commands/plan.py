@@ -17,7 +17,7 @@ from dinarledger.core.money import Money
 from dinarledger.core.types import Plan
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the ``plan`` subcommand group."""
     parser = subparsers.add_parser("plan", help="Plan management")
     plan_sub = parser.add_subparsers(dest="plan_action")
@@ -25,18 +25,25 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     # create
     create_p = plan_sub.add_parser("create", help="Create a new plan")
     create_p.add_argument("--name", required=True, help="Plan name")
-    create_p.add_argument("--price", required=True, type=float,
-                          help="Base price amount")
+    create_p.add_argument(
+        "--price", required=True, type=float, help="Base price amount"
+    )
     create_p.add_argument("--currency", required=True, help="ISO 4217 currency")
-    create_p.add_argument("--cycle", required=True,
-                          choices=["monthly", "quarterly", "annual"],
-                          help="Billing cycle")
-    create_p.add_argument("--setup-fee", type=float, default=None,
-                          help="One-time setup fee")
-    create_p.add_argument("--trial-days", type=int, default=0,
-                          help="Number of trial days")
-    create_p.add_argument("--seats-included", type=int, default=1,
-                          help="Seats included in base price")
+    create_p.add_argument(
+        "--cycle",
+        required=True,
+        choices=["monthly", "quarterly", "annual"],
+        help="Billing cycle",
+    )
+    create_p.add_argument(
+        "--setup-fee", type=float, default=None, help="One-time setup fee"
+    )
+    create_p.add_argument(
+        "--trial-days", type=int, default=0, help="Number of trial days"
+    )
+    create_p.add_argument(
+        "--seats-included", type=int, default=1, help="Seats included in base price"
+    )
     create_p.set_defaults(handler=_cmd_create)
 
     # list
@@ -75,13 +82,21 @@ def _cmd_list(args: argparse.Namespace) -> str:
     headers = ["ID", "Name", "Base Price", "Cycle", "Trial Days", "Seats"]
     rows = []
     for p in store.plans.values():
-        rows.append([
-            p.plan_id, p.name, format_money(p.base_price),
-            p.billing_cycle, str(p.trial_days), str(p.seats_included),
-        ])
+        rows.append(
+            [
+                p.plan_id,
+                p.name,
+                format_money(p.base_price),
+                p.billing_cycle,
+                str(p.trial_days),
+                str(p.seats_included),
+            ]
+        )
     if not rows:
         return "No plans found."
     return output(
-        data=[dict(zip(headers, r)) for r in rows],
-        headers=headers, rows=rows, fmt=args.format,
+        data=[dict(zip(headers, r, strict=False)) for r in rows],
+        headers=headers,
+        rows=rows,
+        fmt=args.format,
     )

@@ -5,8 +5,6 @@ Migration v001 — Initial schema: customers, plans, subscriptions tables.
 from __future__ import annotations
 
 import sqlite3
-from typing import Any
-
 
 CUSTOMERS_SQL = """
 CREATE TABLE IF NOT EXISTS customer (

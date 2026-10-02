@@ -13,11 +13,9 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Optional
 
 from dinarledger.core.money import Money, sum_money, zero
 from dinarledger.core.types import Customer, Invoice, InvoiceStatus, Payment
-
 
 # Window over which payment history is averaged when re-evaluating limits.
 PAYMENT_HISTORY_DAYS = 180
@@ -61,7 +59,7 @@ def available_credit(
 def recalculate_limit(
     customer: Customer,
     payment_history: list[Payment],
-) -> Optional[Money]:
+) -> Money | None:
     """Suggest a new credit limit based on the last six months of payments.
 
     The suggestion is ``average_monthly_payment × 1.5``. Returns ``None``
@@ -94,6 +92,7 @@ def recalculate_limit(
 
 
 # ── Internal helpers ────────────────────────────────────────────────────────
+
 
 def _sum_outstanding(invoices: list[Invoice], currency: str) -> Money:
     """Sum totals of OPEN and OVERDUE invoices in *currency*."""

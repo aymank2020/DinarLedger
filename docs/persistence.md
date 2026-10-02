@@ -169,3 +169,9 @@ You can also call `uow.rollback()` explicitly inside the context.
 | ACID transactions | Simulated | Simulated | **Real** |
 | Setup cost | None | Directory | DB file + migrations |
 | Best for | Tests, REPL | Dev, single-process | Production |
+
+JSON storage uses `fcntl.flock` on Unix and `msvcrt.locking` on Windows.
+The advisory lock protects reads, backup rotation, and file replacement. It does
+not merge the cached state of separate repository instances: use SQLite for
+concurrent writers. Windows lock acquisition raises `OSError` if the standard
+library retry window expires.

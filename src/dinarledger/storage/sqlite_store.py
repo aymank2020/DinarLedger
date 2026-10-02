@@ -10,12 +10,21 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+from collections.abc import Generator
 from contextlib import contextmanager
+from dataclasses import fields, is_dataclass
 from datetime import date
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Generator, Generic, Type, TypeVar, get_args, get_origin, get_type_hints
+from typing import (
+    Any,
+    Generic,
+    TypeVar,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from .base import EntityNotFoundError, FilterCondition, FilterOperator, Repository
 from .serializers import EntitySerializer
@@ -51,6 +60,7 @@ def _python_type_to_sql(py_type: type) -> str:
 
     # Money → store as TEXT (JSON)
     from dinarledger.core.money import Money
+
     if isinstance(py_type, type) and issubclass(py_type, Money):
         return "TEXT"
 
@@ -70,11 +80,22 @@ def _unwrap_optional(tp: Any) -> Any:
     return next(a for a in args if a is not type(None))
 
 
+def _field_names(entity_type: type[Any]) -> list[str]:
+    if not is_dataclass(entity_type):
+        raise TypeError("SQLite entities must be dataclasses")
+    return [field.name for field in fields(entity_type)]
+
+
 def _extract_id_field(entity_type: type) -> str:
     """Determine the primary-key field name for *entity_type*."""
     candidates = [
-        "id", "plan_id", "sub_id", "invoice_id",
-        "payment_id", "customer_id", "code",
+        "id",
+        "plan_id",
+        "sub_id",
+        "invoice_id",
+        "payment_id",
+        "customer_id",
+        "code",
     ]
     hints = get_type_hints(entity_type)
     for c in candidates:
@@ -87,16 +108,14 @@ def _extract_id_field(entity_type: type) -> str:
 # Schema builder
 # ---------------------------------------------------------------------------
 
+
 def _build_create_table_sql(entity_type: type, table_name: str) -> str:
     """Generate a CREATE TABLE statement from a dataclass type."""
     pk_field = _extract_id_field(entity_type)
     columns: list[str] = []
 
     hints = get_type_hints(entity_type)
-    if not hasattr(entity_type, "__dataclass_fields__"):
-        raise TypeError(f"{entity_type} is not a dataclass")
-
-    for field_name in entity_type.__dataclass_fields__:
+    for field_name in _field_names(entity_type):
         py_type = hints.get(field_name, str)
         nullable = _is_optional(py_type)
         if nullable:
@@ -110,12 +129,15 @@ def _build_create_table_sql(entity_type: type, table_name: str) -> str:
 
         columns.append(col_def)
 
-    return f"CREATE TABLE IF NOT EXISTS {table_name} (\n  " + ",\n  ".join(columns) + "\n)"
+    return (
+        f"CREATE TABLE IF NOT EXISTS {table_name} (\n  " + ",\n  ".join(columns) + "\n)"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Value converters for SQLite
 # ---------------------------------------------------------------------------
+
 
 def _to_sql_value(entity: Any, field_name: str) -> Any:
     """Convert a field value from a domain entity to a SQLite-compatible value."""
@@ -131,9 +153,10 @@ def _to_sql_value(entity: Any, field_name: str) -> Any:
     if isinstance(val, Enum):
         return val.value
     from dinarledger.core.money import Money
+
     if isinstance(val, Money):
         return json.dumps(EntitySerializer.serialize(val))
-    if isinstance(val, (list, tuple)):
+    if isinstance(val, list | tuple):
         return json.dumps([EntitySerializer.serialize(item) for item in val])
     # Nested dataclass
     if hasattr(val, "__dataclass_fields__"):
@@ -162,6 +185,7 @@ def _from_sql_value(val: Any, py_type: Any) -> Any:
     if isinstance(py_type, type) and issubclass(py_type, Enum):
         return py_type(val)
     from dinarledger.core.money import Money
+
     if py_type is Money:
         return EntitySerializer.deserialize(json.loads(val))
     # List types
@@ -180,7 +204,8 @@ def _from_sql_value(val: Any, py_type: Any) -> Any:
 # SqliteRepository
 # ---------------------------------------------------------------------------
 
-class SqliteRepository(Repository, Generic[T]):
+
+class SqliteRepository(Repository[T], Generic[T]):
     """SQLite-backed :class:`Repository` with full CRUD and transactions.
 
     Parameters
@@ -273,7 +298,7 @@ class SqliteRepository(Repository, Generic[T]):
             return [self._row_to_entity(row, cursor.description) for row in rows]
 
     def add(self, entity: T) -> T:
-        fields = list(self._entity_type.__dataclass_fields__.keys())
+        fields = _field_names(self._entity_type)
         values = [_to_sql_value(entity, f) for f in fields]
         placeholders = ", ".join("?" for _ in fields)
         col_names = ", ".join(fields)
@@ -287,20 +312,19 @@ class SqliteRepository(Repository, Generic[T]):
         return entity
 
     def update(self, entity: T) -> T:
-        fields = list(self._entity_type.__dataclass_fields__.keys())
+        fields = _field_names(self._entity_type)
         set_clause = ", ".join(f"{f} = ?" for f in fields if f != self._pk_field)
         values = [_to_sql_value(entity, f) for f in fields if f != self._pk_field]
         pk_value = _to_sql_value(entity, self._pk_field)
 
         with self._connection() as conn:
             cursor = conn.execute(
-                f"UPDATE {self._table_name} SET {set_clause} WHERE {self._pk_field} = ?",
+                f"UPDATE {self._table_name} SET {set_clause} "
+                f"WHERE {self._pk_field} = ?",
                 values + [pk_value],
             )
             if cursor.rowcount == 0:
-                raise EntityNotFoundError(
-                    self._entity_type.__name__, str(pk_value)
-                )
+                raise EntityNotFoundError(self._entity_type.__name__, str(pk_value))
             self._auto_commit(conn)
         return entity
 
@@ -423,14 +447,14 @@ class SqliteRepository(Repository, Generic[T]):
 
     # -- Row → Entity conversion ----------------------------------------------
 
-    def _row_to_entity(self, row: tuple, description: Any) -> T:
+    def _row_to_entity(self, row: tuple[Any, ...], description: Any) -> T:
         """Convert a database row to a domain entity."""
         col_names = [desc[0] for desc in description]
         kwargs: dict[str, Any] = {}
         hints = get_type_hints(self._entity_type)
 
-        for col_name, value in zip(col_names, row):
-            if col_name not in self._entity_type.__dataclass_fields__:
+        for col_name, value in zip(col_names, row, strict=False):
+            if col_name not in _field_names(self._entity_type):
                 continue
             py_type = hints.get(col_name, str)
             nullable = _is_optional(py_type)
@@ -445,4 +469,4 @@ class SqliteRepository(Repository, Generic[T]):
     def count(self) -> int:
         with self._connection() as conn:
             cursor = conn.execute(f"SELECT COUNT(*) FROM {self._table_name}")
-            return cursor.fetchone()[0]
+            return int(cursor.fetchone()[0])

@@ -22,7 +22,7 @@ from dinarledger.payments.allocation import allocate_payment, unallocated_amount
 from dinarledger.payments.reconciliation import reconcile
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the ``payment`` subcommand group."""
     parser = subparsers.add_parser("payment", help="Payment management")
     sub = parser.add_subparsers(dest="payment_action")
@@ -38,18 +38,23 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
     # allocate
     alloc_p = sub.add_parser("allocate", help="Allocate payment across invoices")
-    alloc_p.add_argument("--amount", required=True, type=float,
-                         help="Total payment amount")
+    alloc_p.add_argument(
+        "--amount", required=True, type=float, help="Total payment amount"
+    )
     alloc_p.add_argument("--currency", required=True, help="Payment currency")
-    alloc_p.add_argument("--strategy", default="oldest_first",
-                         choices=["oldest_first", "highest_first"],
-                         help="Allocation strategy")
+    alloc_p.add_argument(
+        "--strategy",
+        default="oldest_first",
+        choices=["oldest_first", "highest_first"],
+        help="Allocation strategy",
+    )
     alloc_p.set_defaults(handler=_cmd_allocate)
 
     # reconcile
     recon_p = sub.add_parser("reconcile", help="Reconcile payments with bank entries")
-    recon_p.add_argument("--tolerance", type=float, default=0.05,
-                         help="Amount tolerance for matching")
+    recon_p.add_argument(
+        "--tolerance", type=float, default=0.05, help="Amount tolerance for matching"
+    )
     recon_p.set_defaults(handler=_cmd_reconcile)
 
 
@@ -60,6 +65,7 @@ def _parse_date(s: str | None) -> date_type | None:
 
 
 # ── Command implementations ──────────────────────────────────────────────
+
 
 def _cmd_record(args: argparse.Namespace) -> str:
     inv = store.invoices.get(args.invoice)
@@ -95,7 +101,8 @@ def _cmd_allocate(args: argparse.Namespace) -> str:
 
     # Collect outstanding (non-VOIDED, non-PAID) invoices
     outstanding = [
-        inv for inv in store.invoices.values()
+        inv
+        for inv in store.invoices.values()
         if inv.status not in (InvoiceStatus.VOIDED, InvoiceStatus.PAID)
     ]
 

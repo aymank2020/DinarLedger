@@ -12,6 +12,7 @@ calculate_credit
     Alias for :func:`dinarledger.plans.proration.calculate_upgrade_credit`.
 """
 
-from dinarledger.plans.proration import prorate, calculate_upgrade_credit as calculate_credit
+from dinarledger.plans.proration import calculate_upgrade_credit as calculate_credit
+from dinarledger.plans.proration import prorate
 
 __all__ = ["prorate", "calculate_credit"]

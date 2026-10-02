@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 from dinarledger.core.money import Money, zero
 from dinarledger.revenue.recognition import (
@@ -133,7 +133,9 @@ def deferred_revenue_schedule(
     total_standalone = _total_standalone_price(obligations)
 
     allocations: dict[str, Money] = {
-        obl.obligation_id: _allocated_price(obl, total_standalone, total_transaction_price)
+        obl.obligation_id: _allocated_price(
+            obl, total_standalone, total_transaction_price
+        )
         for obl in obligations
     }
 

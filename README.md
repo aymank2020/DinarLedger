@@ -128,7 +128,7 @@ from dinarledger.core.types import Plan
 repo = MemoryRepository(Plan)
 
 # JSON file (development)
-repo = JsonRepository(Plan, path="data/plans.json")
+repo = JsonRepository(Plan, file_path="data/plans.json")
 
 # SQLite (production)
 repo = SqliteRepository(Plan, db_path="dinarledger.db")

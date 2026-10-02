@@ -12,18 +12,25 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import date
-from decimal import Decimal
 from typing import Any
 from uuid import uuid4
 
+from dinarledger.billing.invoice_gen import (
+    apply_adjustment as _apply_adjustment,
+)
+from dinarledger.billing.invoice_gen import (
+    generate_invoice as _generate_invoice,
+)
+from dinarledger.billing.invoice_gen import (
+    void_invoice as _void_invoice,
+)
 from dinarledger.core.enums import InvoiceStatus
 from dinarledger.core.errors import (
     BillingError,
-    DinarLedgerError,
     InvoiceError,
     PaymentAllocationError,
 )
-from dinarledger.core.money import Money, sum_money, zero
+from dinarledger.core.money import Money
 from dinarledger.core.types import (
     BillingPeriod,
     Invoice,
@@ -33,13 +40,10 @@ from dinarledger.core.types import (
     Subscription,
     TaxRate,
 )
-from dinarledger.billing.invoice_gen import (
-    apply_adjustment as _apply_adjustment,
-    generate_invoice as _generate_invoice,
-    void_invoice as _void_invoice,
-)
 from dinarledger.payments.allocation import (
     allocate_payment as _allocate_payment,
+)
+from dinarledger.payments.allocation import (
     unallocated_amount as _unallocated_amount,
 )
 from dinarledger.reports.aging import aging_report as _aging_report
@@ -86,7 +90,10 @@ class BillingService:
         for sub in subscriptions:
             tax_code = sub.plan.tax_code or ""
             invoice = _generate_invoice(
-                sub, period, tax_rates, tax_code=tax_code,
+                sub,
+                period,
+                tax_rates,
+                tax_code=tax_code,
             )
             if invoice is None:
                 continue

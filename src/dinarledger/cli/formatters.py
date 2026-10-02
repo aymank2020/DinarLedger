@@ -14,16 +14,17 @@ import csv
 import io
 import json
 import os
+from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 from dinarledger.core.money import Money
-
 
 # ---------------------------------------------------------------------------
 # Format resolution
 # ---------------------------------------------------------------------------
+
 
 def resolve_format(cli_format: str | None = None) -> str:
     """Return the output format string (``table``, ``json``, or ``csv``).
@@ -41,6 +42,7 @@ def resolve_format(cli_format: str | None = None) -> str:
 # ---------------------------------------------------------------------------
 # Money / Date helpers
 # ---------------------------------------------------------------------------
+
 
 def format_money(money: Money) -> str:
     """Pretty-print a :class:`Money` object as ``"1,234.56 KWD"``."""
@@ -65,6 +67,7 @@ def format_date(d: date) -> str:
 # Table formatting
 # ---------------------------------------------------------------------------
 
+
 def format_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
     """Render an ASCII table from *headers* and *rows*.
 
@@ -88,16 +91,20 @@ def format_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
     # Build separator
     sep = "+" + "+".join("-" * (w + 2) for w in widths) + "+"
     # Build header line
-    header_line = "|" + "|".join(
-        f" {h:<{widths[i]}} " for i, h in enumerate(str_headers)
-    ) + "|"
+    header_line = (
+        "|" + "|".join(f" {h:<{widths[i]}} " for i, h in enumerate(str_headers)) + "|"
+    )
 
     lines = [sep, header_line, sep]
     for row in str_rows:
-        line = "|" + "|".join(
-            f" {row[i]:<{widths[i]}} " if i < col_count else ""
-            for i in range(col_count)
-        ) + "|"
+        line = (
+            "|"
+            + "|".join(
+                f" {row[i]:<{widths[i]}} " if i < col_count else ""
+                for i in range(col_count)
+            )
+            + "|"
+        )
         lines.append(line)
     lines.append(sep)
 
@@ -107,6 +114,7 @@ def format_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
 # ---------------------------------------------------------------------------
 # JSON formatting
 # ---------------------------------------------------------------------------
+
 
 def format_json(data: Any) -> str:
     """Serialize *data* as indented JSON.
@@ -130,6 +138,7 @@ def _json_default(obj: Any) -> Any:
 # CSV formatting
 # ---------------------------------------------------------------------------
 
+
 def format_csv(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
     """Render *headers* and *rows* as CSV."""
     buf = io.StringIO(newline="")
@@ -143,6 +152,7 @@ def format_csv(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
 # ---------------------------------------------------------------------------
 # Dispatch helper
 # ---------------------------------------------------------------------------
+
 
 def output(
     data: Any,
@@ -178,6 +188,7 @@ def output(
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _cell_str(value: Any) -> str:
     """Convert a cell value to its display string."""

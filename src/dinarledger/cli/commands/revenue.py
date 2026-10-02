@@ -2,9 +2,12 @@
 
 Examples::
 
-    dinarledger revenue recognize --obligations obl.json --price 1200.00 USD --period-start 2025-01-01 --period-end 2025-03-31
-    dinarledger revenue deferred --obligations obl.json --price 1200.00 USD --as-of 2025-02-15
-    dinarledger revenue waterfall --obligations obl.json --price 1200.00 USD --start 2025-01-01 --months 6
+    dinarledger revenue recognize --obligations obl.json --price 1200.00 USD --period-
+    start 2025-01-01 --period-end 2025-03-31
+    dinarledger revenue deferred --obligations obl.json --price 1200.00 USD --as-of
+    2025-02-15
+    dinarledger revenue waterfall --obligations obl.json --price 1200.00 USD --start
+    2025-01-01 --months 6
 """
 
 from __future__ import annotations
@@ -14,50 +17,57 @@ import json
 from datetime import date as date_type
 from decimal import Decimal
 
-from dinarledger.cli import store
 from dinarledger.cli.formatters import format_money, output
 from dinarledger.core.money import Money
 from dinarledger.core.types import BillingPeriod
+from dinarledger.reports.deferred_schedule import deferred_waterfall
 from dinarledger.revenue.recognition import (
     PerformanceObligation,
     calculate_deferred,
     recognize_revenue,
 )
-from dinarledger.reports.deferred_schedule import deferred_waterfall
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the ``revenue`` subcommand group."""
     parser = subparsers.add_parser("revenue", help="Revenue recognition")
     sub = parser.add_subparsers(dest="revenue_action")
 
     # recognize
     rec_p = sub.add_parser("recognize", help="Recognize revenue for a period")
-    rec_p.add_argument("--obligations", required=True,
-                       help="JSON file with obligation definitions")
-    rec_p.add_argument("--price", required=True, type=float,
-                       help="Total transaction price")
+    rec_p.add_argument(
+        "--obligations", required=True, help="JSON file with obligation definitions"
+    )
+    rec_p.add_argument(
+        "--price", required=True, type=float, help="Total transaction price"
+    )
     rec_p.add_argument("--currency", required=True, help="Currency code")
-    rec_p.add_argument("--period-start", required=True, help="Period start (YYYY-MM-DD)")
+    rec_p.add_argument(
+        "--period-start", required=True, help="Period start (YYYY-MM-DD)"
+    )
     rec_p.add_argument("--period-end", required=True, help="Period end (YYYY-MM-DD)")
     rec_p.set_defaults(handler=_cmd_recognize)
 
     # deferred
     def_p = sub.add_parser("deferred", help="Calculate deferred revenue as of a date")
-    def_p.add_argument("--obligations", required=True,
-                       help="JSON file with obligation definitions")
-    def_p.add_argument("--price", required=True, type=float,
-                       help="Total transaction price")
+    def_p.add_argument(
+        "--obligations", required=True, help="JSON file with obligation definitions"
+    )
+    def_p.add_argument(
+        "--price", required=True, type=float, help="Total transaction price"
+    )
     def_p.add_argument("--currency", required=True, help="Currency code")
     def_p.add_argument("--as-of", required=True, help="As-of date (YYYY-MM-DD)")
     def_p.set_defaults(handler=_cmd_deferred)
 
     # waterfall
     wf_p = sub.add_parser("waterfall", help="Generate deferred revenue waterfall")
-    wf_p.add_argument("--obligations", required=True,
-                      help="JSON file with obligation definitions")
-    wf_p.add_argument("--price", required=True, type=float,
-                      help="Total transaction price")
+    wf_p.add_argument(
+        "--obligations", required=True, help="JSON file with obligation definitions"
+    )
+    wf_p.add_argument(
+        "--price", required=True, type=float, help="Total transaction price"
+    )
     wf_p.add_argument("--currency", required=True, help="Currency code")
     wf_p.add_argument("--start", required=True, help="Start date (YYYY-MM-DD)")
     wf_p.add_argument("--months", type=int, default=12, help="Number of months")
@@ -85,7 +95,11 @@ def _load_obligations(path: str, currency: str) -> list[PerformanceObligation]:
             ),
             satisfied_over_time=item["satisfied_over_time"],
             start_date=date_type.fromisoformat(item["start_date"]),
-            end_date=date_type.fromisoformat(item["end_date"]) if item.get("end_date") else None,
+            end_date=(
+                date_type.fromisoformat(item["end_date"])
+                if item.get("end_date")
+                else None
+            ),
         )
         obligations.append(obl)
     return obligations
@@ -96,6 +110,7 @@ def _parse_date(s: str) -> date_type:
 
 
 # ── Command implementations ──────────────────────────────────────────────
+
 
 def _cmd_recognize(args: argparse.Namespace) -> str:
     obligations = _load_obligations(args.obligations, args.currency)
@@ -138,11 +153,15 @@ def _cmd_waterfall(args: argparse.Namespace) -> str:
     headers = ["Month", "Beginning", "Additions", "Recognized", "Ending"]
     rows = []
     for e in entries:
-        rows.append([
-            str(e.month), format_money(e.beginning),
-            format_money(e.additions), format_money(e.recognized),
-            format_money(e.ending),
-        ])
+        rows.append(
+            [
+                str(e.month),
+                format_money(e.beginning),
+                format_money(e.additions),
+                format_money(e.recognized),
+                format_money(e.ending),
+            ]
+        )
     data = {
         "waterfall": [
             {

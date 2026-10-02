@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from datetime import date
 
 from dinarledger.core.enums import InvoiceStatus
-from dinarledger.core.money import Money, zero as _zero
+from dinarledger.core.money import Money
+from dinarledger.core.money import zero as _zero
 from dinarledger.core.types import Invoice
 
 

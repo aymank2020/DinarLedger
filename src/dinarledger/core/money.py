@@ -14,12 +14,11 @@ rather than silently converting.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_HALF_EVEN
-from typing import Iterable
+from decimal import ROUND_HALF_EVEN, Decimal
 
 from .errors import CurrencyMismatchError
-
 
 _TWO_PLACES = Decimal("0.01")
 
@@ -80,7 +79,7 @@ class Money:
     def __mul__(self, factor: Decimal | int | float) -> Money:
         if isinstance(factor, float):
             factor = Decimal(str(factor))
-        elif not isinstance(factor, (Decimal, int)):
+        elif not isinstance(factor, Decimal | int):
             return NotImplemented
         return Money(amount=self.amount * factor, currency=self.currency)
 
@@ -199,6 +198,7 @@ class Money:
 # Module-level helpers
 # ---------------------------------------------------------------------------
 
+
 def sum_money(values: Iterable[Money], currency: str | None = None) -> Money:
     """Sum an iterable of :class:`Money` values.
 
@@ -208,9 +208,11 @@ def sum_money(values: Iterable[Money], currency: str | None = None) -> Money:
     iterator = iter(values)
     try:
         first = next(iterator)
-    except StopIteration:
+    except StopIteration as exc:
         if currency is None:
-            raise ValueError("Cannot sum empty iterable without an explicit currency")
+            raise ValueError(
+                "Cannot sum empty iterable without an explicit currency"
+            ) from exc
         return zero(currency)
 
     expected = currency or first.currency

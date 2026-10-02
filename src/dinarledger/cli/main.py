@@ -32,8 +32,16 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Defer imports to avoid circular dependencies
-    from dinarledger.cli.commands import customer, plan, subscription
-    from dinarledger.cli.commands import invoice, payment, revenue, fx, report
+    from dinarledger.cli.commands import (
+        customer,
+        fx,
+        invoice,
+        payment,
+        plan,
+        report,
+        revenue,
+        subscription,
+    )
 
     customer.register(subparsers)
     plan.register(subparsers)

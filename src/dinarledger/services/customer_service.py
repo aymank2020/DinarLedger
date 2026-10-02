@@ -29,15 +29,16 @@ from dinarledger.core.types import (
     Subscription,
 )
 from dinarledger.customers.credit import check_credit_limit as _check_credit
+from dinarledger.storage.base import Repository
 from dinarledger.subscriptions.lifecycle import (
     change_plan as _change_plan,
-    subscribe as _subscribe,
 )
 from dinarledger.subscriptions.seats import (
     add_seats as _add_seats,
+)
+from dinarledger.subscriptions.seats import (
     remove_seats as _remove_seats,
 )
-from dinarledger.storage.base import Repository
 
 
 class CustomerService:
@@ -224,7 +225,8 @@ class CustomerService:
 
         pending = self._invoices.find({"customer_id": customer_id})
         open_invoices = [
-            inv for inv in pending
+            inv
+            for inv in pending
             if inv.status in {InvoiceStatus.OPEN, InvoiceStatus.OVERDUE}
         ]
 

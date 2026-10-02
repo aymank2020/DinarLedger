@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from decimal import Decimal
 
+from dinarledger.billing.invoice_gen import generate_invoice
 from dinarledger.core.money import Money, zero
 from dinarledger.core.types import (
     BillingPeriod,
@@ -17,7 +17,6 @@ from dinarledger.core.types import (
     Subscription,
     TaxRate,
 )
-from dinarledger.billing.invoice_gen import generate_invoice
 
 
 @dataclass(frozen=True)

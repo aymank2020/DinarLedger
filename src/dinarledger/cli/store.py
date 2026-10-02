@@ -6,11 +6,6 @@ module-level dictionaries for the duration of the CLI process.
 
 from __future__ import annotations
 
-from datetime import date
-from decimal import Decimal
-from typing import Dict, List
-
-from dinarledger.core.money import Money
 from dinarledger.core.types import (
     Customer,
     Invoice,
@@ -23,13 +18,13 @@ from dinarledger.fx.rates import FXRate
 
 # ── In-memory collections ──────────────────────────────────────────────────
 
-customers: Dict[str, Customer] = {}
-plans: Dict[str, Plan] = {}
-subscriptions: Dict[str, Subscription] = {}
-invoices: Dict[str, Invoice] = {}
-payments: Dict[str, Payment] = {}
-tax_rates: Dict[str, TaxRate] = {}
-fx_rates: List[FXRate] = []
+customers: dict[str, Customer] = {}
+plans: dict[str, Plan] = {}
+subscriptions: dict[str, Subscription] = {}
+invoices: dict[str, Invoice] = {}
+payments: dict[str, Payment] = {}
+tax_rates: dict[str, TaxRate] = {}
+fx_rates: list[FXRate] = []
 
 # ── Auto-ID counters ──────────────────────────────────────────────────────
 

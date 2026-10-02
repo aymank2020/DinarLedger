@@ -15,19 +15,18 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import date, timedelta
-from typing import Optional
 
 from dinarledger.core.errors import SubscriptionStateError
 from dinarledger.core.money import Money
 from dinarledger.core.types import BillingPeriod, Plan, Subscription, SubscriptionStatus
 from dinarledger.plans.proration import net_upgrade_amount as _net_upgrade_amount
 
-
 # Maximum days after cancellation that a customer may reactivate.
 REACTIVATION_WINDOW_DAYS = 30
 
 
 # ── Public API ──────────────────────────────────────────────────────────────
+
 
 def subscribe(
     customer_id: str,
@@ -47,9 +46,7 @@ def subscribe(
     period_end = _period_end(start_date, plan.billing_cycle)
 
     status = (
-        SubscriptionStatus.TRIAL
-        if plan.trial_days > 0
-        else SubscriptionStatus.ACTIVE
+        SubscriptionStatus.TRIAL if plan.trial_days > 0 else SubscriptionStatus.ACTIVE
     )
 
     return Subscription(
@@ -176,6 +173,7 @@ def reactivate(
 
 # ── Internal helpers ────────────────────────────────────────────────────────
 
+
 def _period_end(start: date, billing_cycle: str) -> date:
     """Compute the end date of the initial billing period."""
     if billing_cycle == "monthly":
@@ -207,6 +205,7 @@ def _quarter_end(start: date) -> date:
             next_start = date(target_year, target_month + 1, start.day)
         except ValueError:
             import calendar
+
             last_day = calendar.monthrange(target_year, target_month + 1)[1]
             next_start = date(target_year, target_month + 1, last_day)
     return next_start - timedelta(days=1)

@@ -2,7 +2,8 @@
 
 Examples::
 
-    dinarledger subscription create --customer C-0001 --plan PLAN-0001 --start 2025-01-01
+    dinarledger subscription create --customer C-0001 --plan PLAN-0001 --start
+    2025-01-01
     dinarledger subscription cancel SUB-0001 --date 2025-06-15 --immediate
     dinarledger subscription reactivate SUB-0001 --date 2025-06-20
     dinarledger subscription change-plan SUB-0001 --plan PLAN-0002 --date 2025-03-01
@@ -15,7 +16,6 @@ from datetime import date as date_type
 
 from dinarledger.cli import store
 from dinarledger.cli.formatters import format_money, output
-from dinarledger.core.enums import SubscriptionStatus
 from dinarledger.subscriptions.lifecycle import (
     cancel_subscription,
     change_plan,
@@ -24,7 +24,7 @@ from dinarledger.subscriptions.lifecycle import (
 )
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the ``subscription`` subcommand group."""
     parser = subparsers.add_parser("subscription", help="Subscription lifecycle")
     sub = parser.add_subparsers(dest="subscription_action")
@@ -41,8 +41,9 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     cancel_p = sub.add_parser("cancel", help="Cancel a subscription")
     cancel_p.add_argument("sub_id", help="Subscription ID")
     cancel_p.add_argument("--date", required=True, help="Cancel date (YYYY-MM-DD)")
-    cancel_p.add_argument("--immediate", action="store_true",
-                          help="Cancel immediately (vs end of period)")
+    cancel_p.add_argument(
+        "--immediate", action="store_true", help="Cancel immediately (vs end of period)"
+    )
     cancel_p.set_defaults(handler=_cmd_cancel)
 
     # reactivate
@@ -65,6 +66,7 @@ def _parse_date(s: str) -> date_type:
 
 
 # ── Command implementations ──────────────────────────────────────────────
+
 
 def _cmd_create(args: argparse.Namespace) -> str:
     customer = store.customers.get(args.customer)
@@ -90,7 +92,9 @@ def _cmd_create(args: argparse.Namespace) -> str:
         "plan_id": subscription.plan.plan_id,
         "status": subscription.status.value,
         "start_date": str(subscription.start_date),
-        "end_date": str(subscription.end_date) if subscription.end_date else "open-ended",
+        "end_date": (
+            str(subscription.end_date) if subscription.end_date else "open-ended"
+        ),
         "seats": subscription.seat_count,
     }
     return output(data, fmt=args.format)

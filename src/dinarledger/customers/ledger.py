@@ -11,13 +11,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional
 
 from dinarledger.core.money import Money, zero
 
 
 @dataclass(frozen=True)
-class ledger_entry:
+class ledger_entry:  # noqa: N801 - public name and serialized entity tag
     """A single line in the customer AR ledger.
 
     A debit increases the customer's balance (they owe more); a credit
@@ -25,10 +24,10 @@ class ledger_entry:
     """
 
     date: date
-    debit: Optional[Money] = None
-    credit: Optional[Money] = None
+    debit: Money | None = None
+    credit: Money | None = None
     reference: str = ""
-    running_balance: Optional[Money] = None
+    running_balance: Money | None = None
 
 
 # Aging-bucket labels.
@@ -93,6 +92,7 @@ def aging_buckets(
 
 
 # ── Internal helpers ────────────────────────────────────────────────────────
+
 
 def _classify_days(days_past: int) -> str:
     if days_past <= 0:

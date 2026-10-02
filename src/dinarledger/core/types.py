@@ -13,16 +13,18 @@ import enum
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
-from typing import List
 
-from .enums import InvoiceStatus, SubscriptionStatus
+from .enums import InvoiceStatus as InvoiceStatus
+from .enums import SubscriptionStatus as SubscriptionStatus
 from .errors import InvalidParameterError
-from .money import Money, sum_money as _sum_money, zero as _zero
-
+from .money import Money
+from .money import sum_money as _sum_money
+from .money import zero as _zero
 
 # ---------------------------------------------------------------------------
 # BillingPeriod
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class BillingPeriod:
@@ -91,12 +93,16 @@ class Plan:
             )
 
     def __str__(self) -> str:
-        return f"Plan({self.plan_id}: {self.name} @ {self.base_price}/{self.billing_cycle})"
+        return (
+            f"Plan({self.plan_id}: {self.name} @ "
+            f"{self.base_price}/{self.billing_cycle})"
+        )
 
 
 # ---------------------------------------------------------------------------
 # Subscription
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class Subscription:
@@ -143,6 +149,7 @@ class Subscription:
 # Invoice
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class LineItem:
     """A single line on an invoice.
@@ -171,7 +178,7 @@ class Invoice:
     customer_id: str
     issue_date: date
     due_date: date
-    line_items: List[LineItem] = field(default_factory=list)
+    line_items: list[LineItem] = field(default_factory=list)
     status: InvoiceStatus = InvoiceStatus.DRAFT
     subscription_id: str = ""
     period: BillingPeriod | None = None
@@ -229,6 +236,7 @@ class Invoice:
 # Payment
 # ---------------------------------------------------------------------------
 
+
 class PaymentStatus(enum.Enum):
     """Possible states of a payment."""
 
@@ -259,6 +267,7 @@ class Payment:
 # ---------------------------------------------------------------------------
 # TaxRate
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class TaxRate:
@@ -292,6 +301,7 @@ class TaxRate:
 # Customer
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class Customer:
     """A customer (account) in the billing system."""
@@ -305,7 +315,10 @@ class Customer:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "currency", self.currency.upper())
-        if self.credit_limit is not None and self.credit_limit.currency != self.currency:
+        if (
+            self.credit_limit is not None
+            and self.credit_limit.currency != self.currency
+        ):
             raise InvalidParameterError(
                 "credit_limit",
                 message=(

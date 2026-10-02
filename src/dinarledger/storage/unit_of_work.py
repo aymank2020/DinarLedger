@@ -8,7 +8,7 @@ with automatic rollback on failure.  Works with both
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from .base import Repository
 
@@ -35,7 +35,7 @@ class UnitOfWork:
     ...     # If invoice_repo.add fails, customer_repo is rolled back
     """
 
-    def __init__(self, *repositories: Repository) -> None:
+    def __init__(self, *repositories: Repository[Any]) -> None:
         self._repos = repositories
         self._snapshots: list[Any] = []
         self._committed = False
@@ -45,7 +45,7 @@ class UnitOfWork:
         self._begin()
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
         if exc_type is not None:
             self._rollback()
             return False  # re-raise the exception
@@ -67,11 +67,13 @@ class UnitOfWork:
             elif isinstance(repo, MemoryRepository):
                 # Snapshot the store for possible rollback
                 import copy
+
                 self._snapshots.append(copy.deepcopy(repo._store))
             elif isinstance(repo, JsonRepository):
                 # Snapshot the store (force load first)
                 repo._ensure_loaded()
                 import copy
+
                 assert repo._store is not None
                 self._snapshots.append(copy.deepcopy(repo._store))
 
@@ -95,13 +97,14 @@ class UnitOfWork:
         for repo in self._repos:
             if isinstance(repo, SqliteRepository):
                 repo.rollback()
-            elif isinstance(repo, (MemoryRepository, JsonRepository)):
-                if snapshot_idx < len(self._snapshots):
-                    repo._store = self._snapshots[snapshot_idx]
-                    snapshot_idx += 1
-                    # For JsonRepository, also persist the rolled-back state
-                    if isinstance(repo, JsonRepository) and repo._auto_save:
-                        repo._save()
+            elif isinstance(
+                repo, MemoryRepository | JsonRepository
+            ) and snapshot_idx < len(self._snapshots):
+                repo._store = self._snapshots[snapshot_idx]
+                snapshot_idx += 1
+                # For JsonRepository, also persist the rolled-back state
+                if isinstance(repo, JsonRepository) and repo._auto_save:
+                    repo._save()
 
         self._rolled_back = True
 

@@ -15,7 +15,6 @@ from decimal import Decimal
 
 from dinarledger.core.errors import InvalidParameterError
 
-
 # ---------------------------------------------------------------------------
 # Currency
 # ---------------------------------------------------------------------------
@@ -62,6 +61,7 @@ def validate_currency_code(code: str) -> str:
 # Date
 # ---------------------------------------------------------------------------
 
+
 def validate_iso_date(s: str) -> date:
     """Validate and parse an ISO 8601 date string (``YYYY-MM-DD``).
 
@@ -87,16 +87,17 @@ def validate_iso_date(s: str) -> date:
         )
     try:
         return date.fromisoformat(s)
-    except ValueError:
+    except ValueError as exc:
         raise InvalidParameterError(
             "iso_date",
             message=f"Invalid ISO date string: '{s}'. Expected format: YYYY-MM-DD",
-        )
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
 # Decimal / Money
 # ---------------------------------------------------------------------------
+
 
 def validate_positive_decimal(value: Decimal | int | float | str) -> Decimal:
     """Validate that *value* is a positive Decimal.
@@ -124,11 +125,11 @@ def validate_positive_decimal(value: Decimal | int | float | str) -> Decimal:
     elif not isinstance(value, Decimal):
         try:
             d = Decimal(str(value))
-        except Exception:
+        except Exception as exc:
             raise InvalidParameterError(
                 "value",
                 message=f"Cannot convert {value!r} to Decimal",
-            )
+            ) from exc
     else:
         d = value
 
@@ -227,6 +228,7 @@ def validate_email(email: str) -> str:
 # ---------------------------------------------------------------------------
 # Percentage / Rate
 # ---------------------------------------------------------------------------
+
 
 def validate_percentage(rate: Decimal | int | float) -> Decimal:
     """Validate that *rate* is in the inclusive range ``[0, 1]``.

@@ -45,7 +45,10 @@ def deferred_waterfall(
             end = obl.end_date
 
     schedule = deferred_revenue_schedule(
-        obligations, total_price, start, end,
+        obligations,
+        total_price,
+        start,
+        end,
     )
 
     entries: list[WaterfallEntry] = []

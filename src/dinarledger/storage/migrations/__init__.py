@@ -11,8 +11,6 @@ from __future__ import annotations
 import importlib
 import sqlite3
 from pathlib import Path
-from typing import Any
-
 
 _MIGRATIONS_TABLE = """
 CREATE TABLE IF NOT EXISTS _migrations (
@@ -29,7 +27,9 @@ def _get_applied(conn: sqlite3.Connection) -> set[str]:
     return {row[0] for row in rows}
 
 
-def run_migrations(db_path: str | Path, migrations_package: str = __package__) -> list[str]:
+def run_migrations(
+    db_path: str | Path, migrations_package: str = __package__
+) -> list[str]:
     """Run all pending migrations for the database at *db_path*.
 
     Parameters
@@ -62,7 +62,7 @@ def run_migrations(db_path: str | Path, migrations_package: str = __package__) -
 
         module_name = f"{migrations_package}.{version}"
         mod = importlib.import_module(module_name)
-        mod.upgrade(conn)  # type: ignore[attr-defined]
+        mod.upgrade(conn)
 
         conn.execute(
             "INSERT INTO _migrations (version) VALUES (?)",
