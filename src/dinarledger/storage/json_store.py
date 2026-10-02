@@ -7,10 +7,8 @@ and optional file locking.  Supports lazy loading and auto-save on mutation.
 
 from __future__ import annotations
 
-import fcntl
 import json
 import os
-import platform
 import shutil
 import tempfile
 import threading
@@ -23,8 +21,10 @@ from .serializers import EntitySerializer, register_entity
 
 T = TypeVar("T")
 
-# On Windows we cannot use fcntl; fall back to no-op locking.
-_IS_WINDOWS = platform.system() == "Windows"
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
 
 
 def _entity_id(entity: Any) -> str | None:
@@ -47,24 +47,37 @@ def _set_entity_id(entity: Any, new_id: str) -> None:
 
 
 class _FileLock:
-    """Cross-platform advisory file lock (best-effort on Windows)."""
+    """Advisory lock shared by cooperating readers and atomic writers."""
 
     def __init__(self, path: Path) -> None:
         self._lock_path = path.with_suffix(path.suffix + ".lock")
         self._fd: int | None = None
 
     def __enter__(self) -> "_FileLock":
-        if _IS_WINDOWS:
-            return self
         self._fd = os.open(str(self._lock_path), os.O_CREAT | os.O_RDWR)
-        fcntl.flock(self._fd, fcntl.LOCK_EX)
+        try:
+            if os.name == "nt":
+                os.lseek(self._fd, 0, os.SEEK_SET)
+                msvcrt.locking(self._fd, msvcrt.LK_LOCK, 1)
+            else:
+                fcntl.flock(self._fd, fcntl.LOCK_EX)
+        except BaseException:
+            os.close(self._fd)
+            self._fd = None
+            raise
         return self
 
     def __exit__(self, *args: Any) -> None:
         if self._fd is not None:
-            fcntl.flock(self._fd, fcntl.LOCK_UN)
-            os.close(self._fd)
-            self._fd = None
+            try:
+                if os.name == "nt":
+                    os.lseek(self._fd, 0, os.SEEK_SET)
+                    msvcrt.locking(self._fd, msvcrt.LK_UNLCK, 1)
+                else:
+                    fcntl.flock(self._fd, fcntl.LOCK_UN)
+            finally:
+                os.close(self._fd)
+                self._fd = None
 
 
 class JsonRepository(Repository, Generic[T]):
@@ -138,10 +151,11 @@ class JsonRepository(Repository, Generic[T]):
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write(raw)
-            # Rotate backups
-            if self._backup_count > 0 and self._file_path.exists():
-                self._rotate_backups()
-            os.replace(tmp_path, str(self._file_path))
+            with _FileLock(self._file_path):
+                # Rotate backups and publish under the same advisory lock.
+                if self._backup_count > 0 and self._file_path.exists():
+                    self._rotate_backups()
+                os.replace(tmp_path, str(self._file_path))
         except BaseException:
             # Clean up temp file on error
             try:
