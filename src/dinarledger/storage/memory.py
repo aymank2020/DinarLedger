@@ -10,14 +10,23 @@ from __future__ import annotations
 
 import threading
 import uuid
+from contextlib import suppress
 from typing import Any, Generic, TypeVar
 
-from .base import EntityNotFoundError, FilterCondition, FilterOperator, Repository
+from .base import EntityNotFoundError, FilterCondition, Repository
 
 T = TypeVar("T")
 
 # Common attribute names that serve as the primary key.
-_ID_ATTRS = ("id", "plan_id", "sub_id", "invoice_id", "payment_id", "customer_id", "code")
+_ID_ATTRS = (
+    "id",
+    "plan_id",
+    "sub_id",
+    "invoice_id",
+    "payment_id",
+    "customer_id",
+    "code",
+)
 
 
 def _entity_id(entity: Any) -> str | None:
@@ -34,15 +43,13 @@ def _set_entity_id(entity: Any, new_id: str) -> None:
     for attr in _ID_ATTRS:
         if hasattr(entity, attr):
             # Frozen dataclass — use object.__setattr__
-            try:
+            with suppress(AttributeError):
+                # Frozen entities may refuse mutation; keep best-effort behavior.
                 object.__setattr__(entity, attr, new_id)
-            except AttributeError:
-                # Some frozen dataclasses may not allow this; best-effort.
-                pass
             return
 
 
-class MemoryRepository(Repository, Generic[T]):
+class MemoryRepository(Repository[T], Generic[T]):
     """In-memory :class:`Repository` backed by a dict.
 
     Parameters

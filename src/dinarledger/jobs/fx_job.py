@@ -7,9 +7,9 @@ in tests it can be replaced with a deterministic function.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal
 
 from dinarledger.fx.rates import FXRate
 
@@ -23,10 +23,7 @@ class FXRateUpdateSummary:
     pairs: list[str]
 
     def __str__(self) -> str:
-        return (
-            f"FXRateUpdate({self.run_date}: "
-            f"{self.rates_updated} rates updated)"
-        )
+        return f"FXRateUpdate({self.run_date}: " f"{self.rates_updated} rates updated)"
 
 
 class FXRateJob:
@@ -39,7 +36,7 @@ class FXRateJob:
 
     def __init__(
         self,
-        rate_source: callable | None = None,
+        rate_source: Callable[[datetime], list[FXRate]] | None = None,
     ) -> None:
         self._rate_source = rate_source
         self._latest_rates: dict[str, FXRate] = {}

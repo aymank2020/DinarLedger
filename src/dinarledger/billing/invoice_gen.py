@@ -11,11 +11,9 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Optional
 from uuid import uuid4
 
 from dinarledger.core.errors import InvoiceError
-from dinarledger.core.money import Money
 from dinarledger.core.types import (
     BillingPeriod,
     Invoice,
@@ -26,12 +24,12 @@ from dinarledger.core.types import (
     TaxRate,
 )
 
-
 # Default payment-term window in days (net-30).
 DEFAULT_NET_DAYS = 30
 
 
 # ── Public API ──────────────────────────────────────────────────────────────
+
 
 def generate_invoice(
     subscription: Subscription,
@@ -40,7 +38,7 @@ def generate_invoice(
     *,
     tax_code: str = "",
     is_first_invoice: bool = False,
-) -> Optional[Invoice]:
+) -> Invoice | None:
     """Generate an invoice for a subscription's billing period.
 
     Returns ``None`` for subscriptions that are not in ``ACTIVE`` state, or
@@ -57,9 +55,11 @@ def generate_invoice(
     if subscription.status != SubscriptionStatus.ACTIVE:
         return None
 
-    if subscription.cancelled_at is not None:
-        if subscription.cancelled_at < period.start_date:
-            return None
+    if (
+        subscription.cancelled_at is not None
+        and subscription.cancelled_at < period.start_date
+    ):
+        return None
 
     line_items: list[LineItem] = []
 
@@ -152,6 +152,7 @@ def void_invoice(invoice: Invoice) -> Invoice:
 
 
 # ── Internal helpers ────────────────────────────────────────────────────────
+
 
 def _compute_tax_lines(
     charge_lines: list[LineItem],

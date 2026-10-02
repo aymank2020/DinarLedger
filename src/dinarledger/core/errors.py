@@ -31,10 +31,10 @@ from __future__ import annotations
 
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Base
 # ---------------------------------------------------------------------------
+
 
 class DinarLedgerError(Exception):
     """Root exception for all DinarLedger domain errors.
@@ -63,6 +63,7 @@ class DinarLedgerError(Exception):
 # ---------------------------------------------------------------------------
 # Parameter validation
 # ---------------------------------------------------------------------------
+
 
 class InvalidParameterError(DinarLedgerError):
     """Raised when a caller supplies an invalid or out-of-range parameter.
@@ -93,6 +94,7 @@ class InvalidParameterError(DinarLedgerError):
 # ---------------------------------------------------------------------------
 # Subscription errors
 # ---------------------------------------------------------------------------
+
 
 class SubscriptionError(DinarLedgerError):
     """Base for all subscription-related errors."""
@@ -130,7 +132,10 @@ class SubscriptionStateError(SubscriptionError):
             f"Cannot perform '{attempted_action}' on subscription "
             f"'{sub_id}' in state '{current_state}'"
         )
-        ctx: dict[str, Any] = {"current_state": current_state, "attempted_action": attempted_action}
+        ctx: dict[str, Any] = {
+            "current_state": current_state,
+            "attempted_action": attempted_action,
+        }
         if context:
             ctx.update(context)
         super().__init__(msg, sub_id=sub_id, context=ctx)
@@ -164,6 +169,7 @@ class PlanNotFoundError(SubscriptionError):
 # ---------------------------------------------------------------------------
 # Billing errors
 # ---------------------------------------------------------------------------
+
 
 class BillingError(DinarLedgerError):
     """Base for all billing-related errors."""
@@ -282,6 +288,7 @@ class ProrationError(BillingError):
 # Revenue errors
 # ---------------------------------------------------------------------------
 
+
 class RevenueError(DinarLedgerError):
     """Base for all revenue recognition errors."""
 
@@ -321,7 +328,11 @@ class RecognitionError(RevenueError):
         super().__init__(message, contract_id=contract_id, context=ctx)
 
     def __str__(self) -> str:
-        pob = f", pob={self.performance_obligation!r}" if self.performance_obligation else ""
+        pob = (
+            f", pob={self.performance_obligation!r}"
+            if self.performance_obligation
+            else ""
+        )
         return f"RecognitionError(contract={self.contract_id!r}{pob}): {self.args[0]}"
 
 
@@ -362,6 +373,7 @@ class AllocationError(RevenueError):
 # ---------------------------------------------------------------------------
 # Payment errors
 # ---------------------------------------------------------------------------
+
 
 class PaymentError(DinarLedgerError):
     """Base for all payment-related errors."""
@@ -447,6 +459,7 @@ class ReconciliationError(PaymentError):
 # FX errors
 # ---------------------------------------------------------------------------
 
+
 class FXError(DinarLedgerError):
     """Base for all foreign-exchange errors."""
 
@@ -528,12 +541,15 @@ class CurrencyMismatchError(FXError):
         )
 
     def __str__(self) -> str:
-        return f"CurrencyMismatchError: expected={self.expected!r}, actual={self.actual!r}"
+        return (
+            f"CurrencyMismatchError: expected={self.expected!r}, actual={self.actual!r}"
+        )
 
 
 # ---------------------------------------------------------------------------
 # Tax errors
 # ---------------------------------------------------------------------------
+
 
 class TaxError(DinarLedgerError):
     """Base for all tax-related errors."""

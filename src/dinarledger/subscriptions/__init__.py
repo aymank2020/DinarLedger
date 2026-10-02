@@ -14,6 +14,10 @@ cancel_subscription
     Alias for :func:`dinarledger.subscriptions.lifecycle.cancel_subscription`.
 """
 
-from dinarledger.subscriptions.lifecycle import subscribe, change_plan, cancel_subscription
+from dinarledger.subscriptions.lifecycle import (
+    cancel_subscription,
+    change_plan,
+    subscribe,
+)
 
 __all__ = ["subscribe", "change_plan", "cancel_subscription"]

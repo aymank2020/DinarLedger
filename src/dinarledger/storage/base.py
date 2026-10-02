@@ -20,6 +20,7 @@ T = TypeVar("T")
 # Filter primitives
 # ---------------------------------------------------------------------------
 
+
 class FilterOperator(enum.Enum):
     """Operators available for repository filter conditions."""
 
@@ -56,6 +57,7 @@ class FilterCondition:
 # Exceptions
 # ---------------------------------------------------------------------------
 
+
 class EntityNotFoundError(Exception):
     """Raised when a repository lookup by ID fails.
 
@@ -70,14 +72,13 @@ class EntityNotFoundError(Exception):
     def __init__(self, entity_type: str, entity_id: str) -> None:
         self.entity_type = entity_type
         self.entity_id = entity_id
-        super().__init__(
-            f"{entity_type} with id '{entity_id}' not found"
-        )
+        super().__init__(f"{entity_type} with id '{entity_id}' not found")
 
 
 # ---------------------------------------------------------------------------
 # Abstract repository
 # ---------------------------------------------------------------------------
+
 
 class Repository(ABC, Generic[T]):
     """Generic abstract base class for entity persistence.
@@ -87,7 +88,7 @@ class Repository(ABC, Generic[T]):
     """
 
     @abstractmethod
-    def get(self, id: str) -> T | None:
+    def get(self, id: str) -> T | None:  # noqa: A002 - public id/filter keywords
         """Retrieve an entity by its unique identifier.
 
         Returns ``None`` when no entity with the given *id* exists.
@@ -112,11 +113,13 @@ class Repository(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def delete(self, id: str) -> bool:
+    def delete(self, id: str) -> bool:  # noqa: A002 - public id/filter keywords
         """Remove an entity by *id*.  Returns ``True`` if something was deleted."""
 
     @abstractmethod
-    def find(self, filter: dict[str, Any] | None = None) -> list[T]:
+    def find(
+        self, filter: dict[str, Any] | None = None  # noqa: A002 - public keyword
+    ) -> list[T]:  # noqa: A002 - public id/filter keywords
         """Return entities matching all key/value pairs in *filter*.
 
         Each key is an entity field name and the corresponding value is
@@ -127,7 +130,9 @@ class Repository(ABC, Generic[T]):
     # -- Helper for building filter conditions --------------------------------
 
     @staticmethod
-    def _build_conditions(filter: dict[str, Any]) -> list[FilterCondition]:
+    def _build_conditions(
+        filter: dict[str, Any]  # noqa: A002 - public keyword
+    ) -> list[FilterCondition]:  # noqa: A002 - public id/filter keywords
         """Convert a simple equality dict into a list of :class:`FilterCondition`.
 
         This is a convenience so callers can pass ``{"status": "active"}``
@@ -151,9 +156,9 @@ class Repository(ABC, Generic[T]):
         target = condition.value
 
         if op == FilterOperator.EQ:
-            return val == target
+            return bool(val == target)
         if op == FilterOperator.NE:
-            return val != target
+            return bool(val != target)
         if op == FilterOperator.GT:
             return val is not None and val > target
         if op == FilterOperator.LT:

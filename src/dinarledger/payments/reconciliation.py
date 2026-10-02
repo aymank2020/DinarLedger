@@ -14,7 +14,6 @@ from decimal import Decimal
 from dinarledger.core.money import Money
 from dinarledger.core.types import Payment
 
-
 # Weekend days for the simple business-day calendar (Mon=0 .. Sun=6).
 _WEEKEND_DAYS = {5, 6}
 
@@ -89,7 +88,7 @@ def reconcile(
         best_idx: int | None = None
         best_day_distance: int | None = None
 
-        for idx, (entry_id, bank_amount, bank_date) in enumerate(bank_data):
+        for idx, (_entry_id, bank_amount, bank_date) in enumerate(bank_data):
             if idx in matched_bank_indices:
                 continue
 

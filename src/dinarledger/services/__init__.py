@@ -5,11 +5,11 @@ via constructor injection and delegates business logic to the
 specialised domain modules.
 """
 
-from .customer_service import CustomerService
 from .billing_service import BillingService
-from .revenue_service import RevenueService
+from .customer_service import CustomerService
 from .fx_service import FXService
 from .report_service import ReportService
+from .revenue_service import RevenueService
 
 __all__ = [
     "CustomerService",

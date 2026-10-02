@@ -7,9 +7,11 @@ and optional file locking.  Supports lazy loading and auto-save on mutation.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shutil
+import sys
 import tempfile
 import threading
 import uuid
@@ -21,7 +23,7 @@ from .serializers import EntitySerializer, register_entity
 
 T = TypeVar("T")
 
-if os.name == "nt":
+if sys.platform == "win32":
     import msvcrt
 else:
     import fcntl
@@ -29,7 +31,15 @@ else:
 
 def _entity_id(entity: Any) -> str | None:
     """Return the primary-key value from *entity*, or ``None``."""
-    for attr in ("id", "plan_id", "sub_id", "invoice_id", "payment_id", "customer_id", "code"):
+    for attr in (
+        "id",
+        "plan_id",
+        "sub_id",
+        "invoice_id",
+        "payment_id",
+        "customer_id",
+        "code",
+    ):
         val = getattr(entity, attr, None)
         if val is not None:
             return str(val)
@@ -37,12 +47,18 @@ def _entity_id(entity: Any) -> str | None:
 
 
 def _set_entity_id(entity: Any, new_id: str) -> None:
-    for attr in ("id", "plan_id", "sub_id", "invoice_id", "payment_id", "customer_id", "code"):
+    for attr in (
+        "id",
+        "plan_id",
+        "sub_id",
+        "invoice_id",
+        "payment_id",
+        "customer_id",
+        "code",
+    ):
         if hasattr(entity, attr):
-            try:
+            with contextlib.suppress(AttributeError):
                 object.__setattr__(entity, attr, new_id)
-            except AttributeError:
-                pass
             return
 
 
@@ -53,10 +69,10 @@ class _FileLock:
         self._lock_path = path.with_suffix(path.suffix + ".lock")
         self._fd: int | None = None
 
-    def __enter__(self) -> "_FileLock":
+    def __enter__(self) -> _FileLock:
         self._fd = os.open(str(self._lock_path), os.O_CREAT | os.O_RDWR)
         try:
-            if os.name == "nt":
+            if sys.platform == "win32":
                 os.lseek(self._fd, 0, os.SEEK_SET)
                 msvcrt.locking(self._fd, msvcrt.LK_LOCK, 1)
             else:
@@ -70,7 +86,7 @@ class _FileLock:
     def __exit__(self, *args: Any) -> None:
         if self._fd is not None:
             try:
-                if os.name == "nt":
+                if sys.platform == "win32":
                     os.lseek(self._fd, 0, os.SEEK_SET)
                     msvcrt.locking(self._fd, msvcrt.LK_UNLCK, 1)
                 else:
@@ -80,7 +96,7 @@ class _FileLock:
                 self._fd = None
 
 
-class JsonRepository(Repository, Generic[T]):
+class JsonRepository(Repository[T], Generic[T]):
     """File-backed :class:`Repository` that persists to a JSON file.
 
     Parameters
@@ -158,10 +174,8 @@ class JsonRepository(Repository, Generic[T]):
                 os.replace(tmp_path, str(self._file_path))
         except BaseException:
             # Clean up temp file on error
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
-            except OSError:
-                pass
             raise
 
     def _rotate_backups(self) -> None:

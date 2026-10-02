@@ -4,7 +4,8 @@ Examples::
 
     dinarledger report aging --as-of 2025-03-15
     dinarledger report mrr --month 2025-03
-    dinarledger report deferred --obligations obl.json --price 1200.00 USD --as-of 2025-02-15
+    dinarledger report deferred --obligations obl.json --price 1200.00 USD --as-of
+    2025-02-15
 """
 
 from __future__ import annotations
@@ -17,14 +18,13 @@ from decimal import Decimal
 from dinarledger.cli import store
 from dinarledger.cli.formatters import format_money, output
 from dinarledger.core.money import Money
-from dinarledger.core.types import BillingPeriod
 from dinarledger.reports.aging import aging_report
-from dinarledger.reports.mrr import calculate_mrr
 from dinarledger.reports.deferred_schedule import deferred_waterfall
+from dinarledger.reports.mrr import calculate_mrr
 from dinarledger.revenue.recognition import PerformanceObligation
 
 
-def register(subparsers: argparse._SubParsersAction) -> None:
+def register(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
     """Register the ``report`` subcommand group."""
     parser = subparsers.add_parser("report", help="Financial reports")
     sub = parser.add_subparsers(dest="report_action")
@@ -41,10 +41,12 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
     # deferred
     def_p = sub.add_parser("deferred", help="Deferred revenue waterfall report")
-    def_p.add_argument("--obligations", required=True,
-                       help="JSON file with obligation definitions")
-    def_p.add_argument("--price", required=True, type=float,
-                       help="Total transaction price")
+    def_p.add_argument(
+        "--obligations", required=True, help="JSON file with obligation definitions"
+    )
+    def_p.add_argument(
+        "--price", required=True, type=float, help="Total transaction price"
+    )
     def_p.add_argument("--currency", required=True, help="Currency code")
     def_p.add_argument("--start", required=True, help="Start date (YYYY-MM-DD)")
     def_p.add_argument("--months", type=int, default=12, help="Number of months")
@@ -70,13 +72,18 @@ def _load_obligations(path: str, currency: str) -> list[PerformanceObligation]:
             ),
             satisfied_over_time=item["satisfied_over_time"],
             start_date=date_type.fromisoformat(item["start_date"]),
-            end_date=date_type.fromisoformat(item["end_date"]) if item.get("end_date") else None,
+            end_date=(
+                date_type.fromisoformat(item["end_date"])
+                if item.get("end_date")
+                else None
+            ),
         )
         obligations.append(obl)
     return obligations
 
 
 # ── Command implementations ──────────────────────────────────────────────
+
 
 def _cmd_aging(args: argparse.Namespace) -> str:
     as_of = _parse_date(args.as_of)
@@ -87,15 +94,15 @@ def _cmd_aging(args: argparse.Namespace) -> str:
 
     buckets = aging_report(invoices, as_of)
     headers = ["Bucket", "Total", "Invoices"]
-    rows = [
-        [b.label, format_money(b.total), str(b.invoice_count)]
-        for b in buckets
-    ]
+    rows = [[b.label, format_money(b.total), str(b.invoice_count)] for b in buckets]
     data = {
         "as_of": str(as_of),
         "buckets": [
-            {"label": b.label, "total": format_money(b.total),
-             "invoice_count": b.invoice_count}
+            {
+                "label": b.label,
+                "total": format_money(b.total),
+                "invoice_count": b.invoice_count,
+            }
             for b in buckets
         ],
     }
@@ -134,16 +141,24 @@ def _cmd_deferred(args: argparse.Namespace) -> str:
     entries = deferred_waterfall(obligations, total_price, start, months=args.months)
     headers = ["Month", "Beginning", "Additions", "Recognized", "Ending"]
     rows = [
-        [str(e.month), format_money(e.beginning), format_money(e.additions),
-         format_money(e.recognized), format_money(e.ending)]
+        [
+            str(e.month),
+            format_money(e.beginning),
+            format_money(e.additions),
+            format_money(e.recognized),
+            format_money(e.ending),
+        ]
         for e in entries
     ]
     data = {
         "waterfall": [
-            {"month": str(e.month), "beginning": format_money(e.beginning),
-             "additions": format_money(e.additions),
-             "recognized": format_money(e.recognized),
-             "ending": format_money(e.ending)}
+            {
+                "month": str(e.month),
+                "beginning": format_money(e.beginning),
+                "additions": format_money(e.additions),
+                "recognized": format_money(e.recognized),
+                "ending": format_money(e.ending),
+            }
             for e in entries
         ],
     }

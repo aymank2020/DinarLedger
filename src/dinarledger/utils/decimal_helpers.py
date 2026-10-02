@@ -7,7 +7,7 @@ calculations using :class:`decimal.Decimal`.
 
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_EVEN, ROUND_HALF_UP
+from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal
 
 
 def round_half_even(value: Decimal, places: int = 2) -> Decimal:

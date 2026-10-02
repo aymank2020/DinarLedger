@@ -11,7 +11,8 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 
 from dinarledger.core.enums import SubscriptionStatus
-from dinarledger.core.money import Money, zero as _zero
+from dinarledger.core.money import Money
+from dinarledger.core.money import zero as _zero
 from dinarledger.core.types import Plan, Subscription
 
 
@@ -86,7 +87,10 @@ def calculate_mrr(
         if sub.start_date is not None and month_start <= sub.start_date <= month_end:
             new_mrr = new_mrr + sub_monthly
 
-        if sub.cancelled_at is not None and month_start <= sub.cancelled_at <= month_end:
+        if (
+            sub.cancelled_at is not None
+            and month_start <= sub.cancelled_at <= month_end
+        ):
             churn_mrr = churn_mrr + sub_monthly
 
         if sub.status == SubscriptionStatus.ACTIVE:

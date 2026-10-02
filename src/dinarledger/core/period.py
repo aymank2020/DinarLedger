@@ -10,16 +10,15 @@ from __future__ import annotations
 
 import calendar
 from datetime import date, timedelta
-from decimal import Decimal, ROUND_HALF_UP
-from typing import List
+from decimal import ROUND_HALF_UP, Decimal
 
 from .errors import InvalidParameterError
 from .types import BillingPeriod
 
-
 # ---------------------------------------------------------------------------
 # Month helpers
 # ---------------------------------------------------------------------------
+
 
 def days_in_month(year: int, month: int) -> int:
     """Number of days in the given *year* and *month*.
@@ -27,9 +26,7 @@ def days_in_month(year: int, month: int) -> int:
     Handles leap years via :func:`calendar.monthrange`.
     """
     if not 1 <= month <= 12:
-        raise InvalidParameterError(
-            "month", message=f"month must be 1–12, got {month}"
-        )
+        raise InvalidParameterError("month", message=f"month must be 1–12, got {month}")
     return calendar.monthrange(year, month)[1]
 
 
@@ -50,7 +47,7 @@ def days_in_period(start: date, end: date) -> int:
 _CYCLE_MONTHS = {"monthly": 1, "quarterly": 3, "annual": 12}
 
 
-def billing_periods(start: date, cycles: int, cycle: str) -> List[BillingPeriod]:
+def billing_periods(start: date, cycles: int, cycle: str) -> list[BillingPeriod]:
     """Generate consecutive billing periods starting from *start*.
 
     Each period begins on the same day-of-month as *start* (clamped to
@@ -75,9 +72,7 @@ def billing_periods(start: date, cycles: int, cycle: str) -> List[BillingPeriod]
         next_start = _advance_months(current_start, month_step)
         current_end = next_start - timedelta(days=1)
 
-        periods.append(
-            BillingPeriod(start_date=current_start, end_date=current_end)
-        )
+        periods.append(BillingPeriod(start_date=current_start, end_date=current_end))
         current_start = next_start
 
     return periods
@@ -137,6 +132,7 @@ def proration_fraction(
 # ---------------------------------------------------------------------------
 # Stub period
 # ---------------------------------------------------------------------------
+
 
 def stub_period(
     period: BillingPeriod,

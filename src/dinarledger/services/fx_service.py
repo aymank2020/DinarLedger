@@ -8,13 +8,14 @@ Delegates to:
 
 from __future__ import annotations
 
-from datetime import date
 from decimal import Decimal
 
-from dinarledger.core.errors import FXError, RateNotFoundError
+from dinarledger.core.errors import RateNotFoundError
 from dinarledger.core.money import Money
 from dinarledger.core.types import Invoice
-from dinarledger.fx.rates import FXRate, convert as _convert, cross_rate as _cross_rate
+from dinarledger.fx.rates import FXRate
+from dinarledger.fx.rates import convert as _convert
+from dinarledger.fx.rates import cross_rate as _cross_rate
 from dinarledger.fx.revaluation import revalue_ar as _revalue_ar
 
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from dinarledger.core.money import Money, zero
-from dinarledger.core.types import Invoice, InvoiceStatus
+from dinarledger.core.types import Invoice
 
 
 def allocate_payment(

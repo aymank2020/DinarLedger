@@ -10,11 +10,17 @@ from __future__ import annotations
 
 import enum
 import json
+from dataclasses import fields, is_dataclass
 from datetime import date
 from decimal import Decimal
-from typing import Any, Type
+from typing import Any, Protocol
 
-from dinarledger.core.enums import BillingCycle, InvoiceStatus, LineItemType, SubscriptionStatus
+from dinarledger.core.enums import (
+    BillingCycle,
+    InvoiceStatus,
+    LineItemType,
+    SubscriptionStatus,
+)
 from dinarledger.core.money import Money
 from dinarledger.core.types import (
     BillingPeriod,
@@ -29,10 +35,10 @@ from dinarledger.core.types import (
 )
 from dinarledger.fx.rates import FXRate
 
-
 # ---------------------------------------------------------------------------
 # Individual adapters
 # ---------------------------------------------------------------------------
+
 
 class MoneyAdapter:
     """Serialize / deserialize :class:`Money` objects."""
@@ -96,7 +102,7 @@ class EnumAdapter:
 # Enum lookup map
 # ---------------------------------------------------------------------------
 
-_ENUM_MAP: dict[str, Type[enum.Enum]] = {
+_ENUM_MAP: dict[str, type[enum.Enum]] = {
     "InvoiceStatus": InvoiceStatus,
     "SubscriptionStatus": SubscriptionStatus,
     "LineItemType": LineItemType,
@@ -109,7 +115,7 @@ _ENUM_MAP: dict[str, Type[enum.Enum]] = {
 # Entity type map (qualified name -> class) — extensible at runtime
 # ---------------------------------------------------------------------------
 
-_ENTITY_MAP: dict[str, Type] = {
+_ENTITY_MAP: dict[str, type[Any]] = {
     "BillingPeriod": BillingPeriod,
     "Plan": Plan,
     "Subscription": Subscription,
@@ -122,7 +128,7 @@ _ENTITY_MAP: dict[str, Type] = {
 }
 
 
-def register_entity(entity_type: Type) -> None:
+def register_entity(entity_type: type[Any]) -> None:
     """Register a dataclass type so the serializer can deserialize it by name.
 
     This is needed for custom entity types that aren't part of the core
@@ -136,6 +142,12 @@ def register_entity(entity_type: Type) -> None:
 # EntitySerializer
 # ---------------------------------------------------------------------------
 
+
+class _SerializerAdapter(Protocol):
+    @staticmethod
+    def serialize(value: Any) -> dict[str, str]: ...
+
+
 class EntitySerializer:
     """Round-trip serializer for DinarLedger domain entities.
 
@@ -144,7 +156,7 @@ class EntitySerializer:
     appropriate adapter based on type.
     """
 
-    _ADAPTERS = {
+    _ADAPTERS: dict[type[Any], type[_SerializerAdapter]] = {
         Money: MoneyAdapter,
         Decimal: DecimalAdapter,
         date: DateAdapter,
@@ -157,7 +169,7 @@ class EntitySerializer:
             return None
 
         # Primitive types pass through
-        if isinstance(obj, (str, int, float, bool)):
+        if isinstance(obj, str | int | float | bool):
             return obj
 
         # Enum
@@ -171,7 +183,7 @@ class EntitySerializer:
                 return adapter.serialize(obj)
 
         # List / tuple
-        if isinstance(obj, (list, tuple)):
+        if isinstance(obj, list | tuple):
             return [cls.serialize(item) for item in obj]
 
         # Dict
@@ -179,10 +191,10 @@ class EntitySerializer:
             return {k: cls.serialize(v) for k, v in obj.items()}
 
         # dataclass-like entity
-        if hasattr(obj, "__dataclass_fields__"):
+        if is_dataclass(obj) and not isinstance(obj, type):
             result: dict[str, Any] = {"_type": type(obj).__qualname__}
-            for field_name in obj.__dataclass_fields__:
-                result[field_name] = cls.serialize(getattr(obj, field_name))
+            for field in fields(obj):
+                result[field.name] = cls.serialize(getattr(obj, field.name))
             return result
 
         # Fallback — use repr
@@ -194,7 +206,7 @@ class EntitySerializer:
         if data is None:
             return None
 
-        if isinstance(data, (str, int, float, bool)):
+        if isinstance(data, str | int | float | bool):
             return data
 
         if isinstance(data, list):
@@ -214,12 +226,12 @@ class EntitySerializer:
                 return EnumAdapter.deserialize(data)
 
             # Entity types
-            entity_cls = _ENTITY_MAP.get(type_tag)
+            entity_cls = (
+                _ENTITY_MAP.get(type_tag) if isinstance(type_tag, str) else None
+            )
             if entity_cls is not None:
                 kwargs = {
-                    k: cls.deserialize(v)
-                    for k, v in data.items()
-                    if k != "_type"
+                    k: cls.deserialize(v) for k, v in data.items() if k != "_type"
                 }
                 return entity_cls(**kwargs)
 
@@ -232,6 +244,7 @@ class EntitySerializer:
 # ---------------------------------------------------------------------------
 # Convenience helpers
 # ---------------------------------------------------------------------------
+
 
 def to_json(obj: Any, **kwargs: Any) -> str:
     """Serialize *obj* to a JSON string."""

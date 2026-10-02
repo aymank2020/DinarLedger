@@ -7,7 +7,7 @@ Re-exports:
 """
 
 from dinarledger.fx.rates import FXRate, convert, cross_rate
-from dinarledger.fx.revaluation import unrealized_gain, revalue_ar
+from dinarledger.fx.revaluation import revalue_ar, unrealized_gain
 
 # Public alias expected by the package-level import
 revalue = revalue_ar

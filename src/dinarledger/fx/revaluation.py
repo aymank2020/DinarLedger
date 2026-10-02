@@ -8,9 +8,9 @@ loss in the reporting currency.
 
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
-from dinarledger.core.money import Money, zero
+from dinarledger.core.money import Money
 from dinarledger.core.types import Invoice
 
 

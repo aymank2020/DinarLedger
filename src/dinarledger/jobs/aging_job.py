@@ -7,7 +7,7 @@ Scans OPEN invoices and transitions those past their ``due_date`` to
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from datetime import date, datetime
+from datetime import datetime
 
 from dinarledger.core.enums import InvoiceStatus
 from dinarledger.core.money import Money, zero
@@ -33,6 +33,8 @@ class AgingRunSummary:
 
 class AgingJob:
     """Marks OPEN invoices as OVERDUE when past their due date."""
+
+    _invoices: list[Invoice]
 
     def run(
         self,
@@ -62,9 +64,7 @@ class AgingJob:
             if inv.status == InvoiceStatus.OPEN:
                 scanned += 1
                 if inv.due_date < as_of:
-                    updated.append(
-                        replace(inv, status=InvoiceStatus.OVERDUE)
-                    )
+                    updated.append(replace(inv, status=InvoiceStatus.OVERDUE))
                     transitioned += 1
                     overdue_total = overdue_total + inv.total
                 else:

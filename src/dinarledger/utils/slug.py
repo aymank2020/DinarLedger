@@ -10,7 +10,6 @@ from __future__ import annotations
 import re
 import uuid
 from datetime import date
-from typing import Optional
 
 
 def slugify(text: str) -> str:
@@ -42,7 +41,7 @@ def slugify(text: str) -> str:
     return text
 
 
-def generate_id(prefix: Optional[str] = None) -> str:
+def generate_id(prefix: str | None = None) -> str:
     """Generate a unique ID with an optional *prefix*.
 
     Uses :func:`uuid.uuid4` for uniqueness.  The prefix, if provided,

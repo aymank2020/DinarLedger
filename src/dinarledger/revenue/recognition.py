@@ -14,10 +14,10 @@ standalone selling price to the total of all standalone prices.
 from __future__ import annotations
 
 import calendar
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Sequence
+from decimal import ROUND_HALF_UP, Decimal
 
 from dinarledger.core.money import Money, zero
 from dinarledger.core.types import BillingPeriod
@@ -49,6 +49,7 @@ class PerformanceObligation:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _total_standalone_price(obligations: Sequence[PerformanceObligation]) -> Money:
     if not obligations:
@@ -114,6 +115,7 @@ def _next_month(d: date) -> date:
 # recognize_revenue
 # ---------------------------------------------------------------------------
 
+
 def recognize_revenue(
     obligations: list[PerformanceObligation],
     total_transaction_price: Money,
@@ -123,7 +125,7 @@ def recognize_revenue(
 
     Over-time obligations recognise
 
-        allocated_price / total_months × (days_active / days_in_month)
+        allocated_price / total_months Ã— (days_active / days_in_month)
 
     for stub months and ``allocated_price / total_months`` for full months.
     Point-in-time obligations recognise the full allocated amount when the
@@ -212,6 +214,7 @@ def recognize_revenue(
 # ---------------------------------------------------------------------------
 # calculate_deferred
 # ---------------------------------------------------------------------------
+
 
 def calculate_deferred(
     obligations: list[PerformanceObligation],

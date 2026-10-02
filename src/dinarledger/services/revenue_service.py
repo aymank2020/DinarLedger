@@ -10,22 +10,29 @@ Delegates to:
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
 
 from dinarledger.core.money import Money
 from dinarledger.core.types import BillingPeriod
-from dinarledger.revenue.recognition import (
-    PerformanceObligation,
-    recognize_revenue as _recognize_revenue,
-    calculate_deferred as _calculate_deferred,
+from dinarledger.revenue.allocation import (
+    allocate_transaction_price as _allocate_proportional,
+)
+from dinarledger.revenue.allocation import (
+    residual_allocation as _allocate_residual,
 )
 from dinarledger.revenue.deferred import (
     DeferredEntry,
+)
+from dinarledger.revenue.deferred import (
     deferred_revenue_schedule as _deferred_schedule,
 )
-from dinarledger.revenue.allocation import (
-    allocate_transaction_price as _allocate_proportional,
-    residual_allocation as _allocate_residual,
+from dinarledger.revenue.recognition import (
+    PerformanceObligation,
+)
+from dinarledger.revenue.recognition import (
+    calculate_deferred as _calculate_deferred,
+)
+from dinarledger.revenue.recognition import (
+    recognize_revenue as _recognize_revenue,
 )
 
 

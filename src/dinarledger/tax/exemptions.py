@@ -58,7 +58,10 @@ def apply_exemption(
 
             rate_jurisdiction = getattr(tax_rate, "jurisdiction", None)
 
-            if rate_jurisdiction is not None and rate_jurisdiction == customer.tax_jurisdiction:
+            if (
+                rate_jurisdiction is not None
+                and rate_jurisdiction == customer.tax_jurisdiction
+            ):
                 result.append(item)
             elif rate_jurisdiction is not None:
                 result.append(

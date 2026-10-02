@@ -5,8 +5,6 @@ Migration v002 — Add FX rates table.
 from __future__ import annotations
 
 import sqlite3
-from typing import Any
-
 
 FX_RATES_SQL = """
 CREATE TABLE IF NOT EXISTS fxrate (

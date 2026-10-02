@@ -5,8 +5,6 @@ Migration v003 — Payments and reconciliation tables.
 from __future__ import annotations
 
 import sqlite3
-from typing import Any
-
 
 PAYMENTS_SQL = """
 CREATE TABLE IF NOT EXISTS payment (

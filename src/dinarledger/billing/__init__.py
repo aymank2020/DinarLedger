@@ -11,6 +11,6 @@ apply_adjustment
     Alias for :func:`dinarledger.billing.invoice_gen.apply_adjustment`.
 """
 
-from dinarledger.billing.invoice_gen import generate_invoice, apply_adjustment
+from dinarledger.billing.invoice_gen import apply_adjustment, generate_invoice
 
 __all__ = ["generate_invoice", "apply_adjustment"]
